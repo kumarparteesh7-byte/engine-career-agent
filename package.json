@@ -1,0 +1,14 @@
+{
+  "name": "byte-engine",
+  "version": "0.1.0",
+  "description": "Personal PM job-search engine + dashboard",
+  "private": true,
+  "scripts": {
+    "scan": "node src/scan.js",
+    "score": "node src/score-all.js",
+    "dashboard": "node src/dashboard/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

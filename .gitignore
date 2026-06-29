@@ -1,0 +1,14 @@
+# Personal data — never commit these
+data/cv.txt
+data/profile.json
+data/tracker.json
+output/
+
+# Environment
+.env
+
+# Node
+node_modules/
+
+# macOS
+.DS_Store
