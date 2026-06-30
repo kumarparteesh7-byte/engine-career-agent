@@ -5,18 +5,41 @@ const https = require('https');
 const { load, updateJob } = require('../tracker/tracker');
 const CV = require('../lib/cv');
 
-const PORT        = 3000;
+const PORT        = process.env.PORT || 3000;
 const HTML        = path.join(__dirname, 'index.html');
 const LIB_CV      = path.join(__dirname, '../lib/cv.js');
 const CONFIG_PATH = path.join(__dirname, '../../data/config.json');
 const CV_PATH     = path.join(__dirname, '../../data/cv.txt');
+
+// On a fresh deploy the personal CV isn't in the repo (gitignored). Seed it
+// from the CV_TEXT env var so the hosted app can tailor against it.
+if (process.env.CV_TEXT && !fs.existsSync(CV_PATH)) {
+  fs.mkdirSync(path.dirname(CV_PATH), { recursive: true });
+  fs.writeFileSync(CV_PATH, process.env.CV_TEXT);
+}
 
 function loadConfig() {
   if (fs.existsSync(CONFIG_PATH)) return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
   return { keywords: [], locations: [], greenhouse: [], lever: [], ashby: [], filterThreshold: 3.5 };
 }
 
+// Optional HTTP Basic Auth — enabled whenever APP_PASSWORD is set (i.e. in
+// production). Left open with no password for local development.
+function authed(req, res) {
+  const pass = process.env.APP_PASSWORD;
+  if (!pass) return true;
+  const [, b64] = (req.headers.authorization || '').split(' ');
+  const [, pw] = Buffer.from(b64 || '', 'base64').toString().split(':');
+  if (pw === pass) return true;
+  res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Byte Engine"' });
+  res.end('Authentication required');
+  return false;
+}
+
 const server = http.createServer(async (req, res) => {
+  // Health check must answer before auth so the host can probe it.
+  if (req.url === '/healthz') { res.writeHead(200); return res.end('ok'); }
+  if (!authed(req, res)) return;
   const url = new URL(req.url, `http://localhost:${PORT}`);
 
   // Jobs list
@@ -328,7 +351,17 @@ async function generatePDF(cvData) {
   const tmpl = fs.readFileSync(path.join(__dirname, 'cv-template.html'), 'utf8');
   const html = tmpl.replace('window.__CV_DATA__;', `${JSON.stringify(cvData)};`);
 
-  const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    // Use the container-provided Chrome in production; fall back to the
+    // puppeteer-bundled one locally.
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    args: [
+      '--no-sandbox', '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',   // avoid /dev/shm OOM on small hosts
+      '--disable-gpu', '--single-process', '--no-zygote',
+    ],
+  });
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
