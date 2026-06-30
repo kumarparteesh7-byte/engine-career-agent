@@ -7,6 +7,9 @@ output/
 # Environment
 .env
 
+# Local dev config (holds API keys)
+.claude/launch.json
+
 # Node
 node_modules/
 

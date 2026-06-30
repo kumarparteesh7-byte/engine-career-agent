@@ -1,85 +1,73 @@
 #!/usr/bin/env node
-/**
- * scan.js — fetch jobs from configured sources and upsert into the tracker.
- *
- * Usage:
- *   node src/scan.js
- *   node src/scan.js --source greenhouse --company stripe
- */
-
+const path = require('path');
+const fs   = require('fs');
 const { fetchGreenhouse } = require('./adapters/greenhouse');
-const { upsert } = require('./tracker/tracker');
+const { fetchLever }      = require('./adapters/lever');
+const { fetchAshby }      = require('./adapters/ashby');
+const { fetchAdzuna }     = require('./adapters/adzuna');
+const { upsert }          = require('./tracker/tracker');
 
-// PM-relevant keywords to filter titles (edit to taste)
-const PM_KEYWORDS = [
-  'product manager',
-  'product management',
-  'senior pm',
-  'staff pm',
-  'group pm',
-  'principal pm',
-  'director of product',
-  'head of product',
-  'vp product',
-  'product lead',
-  'product owner',
-];
+const CONFIG_PATH = path.join(__dirname, '../data/config.json');
 
-// Companies confirmed on Greenhouse public boards
-const GREENHOUSE_BOARDS = [
-  'figma',
-  'stripe',
-  'anthropic',
-  'airtable',
-  'asana',
-  'brex',
-  'canva',
-  'checkr',
-  'coinbase',
-  'confluent',
-  'datadog',
-  'dropbox',
-  'duolingo',
-  'hubspot',
-  'intercom',
-  'lattice',
-  'lyft',
-  'mixpanel',
-  'mongodb',
-  'miro',
-  'notion',       // may 404 — skipped gracefully
-  'openai',
-  'plaid',
-  'ramp',
-  'reddit',
-  'rippling',
-  'robinhood',
-  'segment',
-  'shopify',
-  'snowflake',
-  'square',
-  'twilio',
-  'zendesk',
-];
-
-async function run() {
-  console.log('Scanning Greenhouse boards…');
-  const allJobs = [];
-
-  for (const board of GREENHOUSE_BOARDS) {
-    process.stdout.write(`  ${board}… `);
-    try {
-      const jobs = await fetchGreenhouse(board, PM_KEYWORDS);
-      console.log(`${jobs.length} PM roles`);
-      allJobs.push(...jobs);
-    } catch (e) {
-      console.log(`error: ${e.message}`);
-    }
-  }
-
-  const stored = upsert(allJobs);
-  const newCount = allJobs.length;
-  console.log(`\nDone. ${newCount} jobs fetched, ${stored.length} total in tracker.`);
+function loadConfig() {
+  if (fs.existsSync(CONFIG_PATH)) return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+  return { keywords: [], locations: [], greenhouse: [], lever: [], ashby: [] };
 }
 
-run().catch((e) => { console.error(e); process.exit(1); });
+async function run() {
+  const cfg = loadConfig();
+  const { keywords, locations, greenhouse = [], lever = [], ashby = [] } = cfg;
+  console.log(`Keywords: ${keywords.length} | Locations: ${locations.join(', ')}`);
+  console.log(`Sources: ${greenhouse.length} Greenhouse, ${lever.length} Lever, ${ashby.length} Ashby\n`);
+
+  const all = [];
+
+  // Greenhouse
+  for (const board of greenhouse) {
+    process.stdout.write(`  [greenhouse] ${board}… `);
+    try {
+      const jobs = await fetchGreenhouse(board, keywords);
+      console.log(jobs.length);
+      all.push(...jobs);
+    } catch(e) { console.log(`skip`); }
+  }
+
+  // Lever
+  for (const board of lever) {
+    process.stdout.write(`  [lever] ${board}… `);
+    try {
+      const jobs = await fetchLever(board, keywords, locations);
+      console.log(jobs.length);
+      all.push(...jobs);
+    } catch(e) { console.log(`skip`); }
+  }
+
+  // Ashby
+  for (const board of ashby) {
+    process.stdout.write(`  [ashby] ${board}… `);
+    try {
+      const jobs = await fetchAshby(board, keywords, locations);
+      console.log(jobs.length);
+      all.push(...jobs);
+    } catch(e) { console.log(`skip`); }
+  }
+
+  // Adzuna (AU + IN)
+  if (process.env.ADZUNA_APP_ID) {
+    for (const country of ['au', 'in']) {
+      process.stdout.write(`  [adzuna:${country}]… `);
+      try {
+        const jobs = await fetchAdzuna(country, keywords, 3);
+        console.log(jobs.length);
+        all.push(...jobs);
+      } catch(e) { console.log(`error: ${e.message.slice(0,40)}`); }
+    }
+  } else {
+    console.log('  [adzuna] skipped — add ADZUNA_APP_ID/KEY to enable AU+IN jobs');
+  }
+
+  const stored = upsert(all);
+  console.log(`\nDone. ${all.length} fetched → ${stored.length} total in tracker.`);
+}
+
+run().catch(e => { console.error(e); process.exit(1); });

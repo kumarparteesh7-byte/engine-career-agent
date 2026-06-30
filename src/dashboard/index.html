@@ -3,98 +3,174 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Byte Engine — PM Job Dashboard</title>
+<title>Byte Engine</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh}
 
-  header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; }
-  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-  header h1 span { color: #6366f1; }
-  .header-right { display: flex; align-items: center; gap: 12px; }
+/* HEADER */
+header{background:#1a1d27;border-bottom:1px solid #2d3148;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+header h1{font-size:17px;font-weight:700}
+header h1 span{color:#6366f1}
+.hdr-right{display:flex;align-items:center;gap:9px}
+.badge{font-size:12px;background:#1e2235;border:1px solid #2d3148;border-radius:6px;padding:4px 10px;color:#94a3b8}
+.btn-hdr{border:none;border-radius:8px;padding:7px 13px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-scan{background:#6366f1;color:#fff}.btn-scan:hover{background:#4f52d9}
+.btn-scan:disabled{background:#374151;color:#6b7280;cursor:not-allowed}
+.btn-settings{background:#1e2235;color:#94a3b8;border:1px solid #2d3148}.btn-settings:hover{color:#e2e8f0}
+.btn-paste{background:#052e16;color:#34d399;border:1px solid #064e1e}.btn-paste:hover{background:#064e1e}
 
-  .badge { font-size: 12px; background: #1e2235; border: 1px solid #2d3148; border-radius: 6px; padding: 4px 10px; color: #94a3b8; }
+/* TOOLBAR */
+.toolbar{padding:10px 22px;display:flex;align-items:center;gap:10px;background:#13151f;border-bottom:1px solid #1e2235;flex-wrap:wrap}
+.toolbar label{font-size:12px;color:#94a3b8}
+input[type=range]{accent-color:#6366f1;width:110px;cursor:pointer}
+.score-val{font-size:13px;font-weight:700;color:#6366f1;min-width:26px}
+select{background:#1a1d27;border:1px solid #2d3148;border-radius:6px;color:#e2e8f0;font-size:12px;padding:5px 8px;cursor:pointer}
+.stats{display:flex;gap:7px;margin-left:auto}
+.stat{background:#1a1d27;border:1px solid #2d3148;border-radius:6px;padding:4px 10px;font-size:12px;color:#64748b}
+.stat strong{color:#e2e8f0}
 
-  .scan-btn { background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
-  .scan-btn:hover { background: #4f52d9; }
-  .scan-btn:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+/* GRID */
+main{padding:18px 22px}
+.human-loop{background:#1c1209;border:1px solid #78350f;border-radius:8px;padding:9px 14px;font-size:12px;color:#fbbf24;display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:13px}
 
-  .toolbar { padding: 16px 28px; display: flex; align-items: center; gap: 14px; background: #13151f; border-bottom: 1px solid #1e2235; }
-  .toolbar label { font-size: 13px; color: #94a3b8; }
-  .filter-row { display: flex; align-items: center; gap: 8px; }
-  input[type=range] { accent-color: #6366f1; cursor: pointer; width: 140px; }
-  .score-val { font-size: 13px; font-weight: 700; color: #6366f1; min-width: 28px; }
+/* CARD */
+.card{background:#1a1d27;border:1px solid #2d3148;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:9px;cursor:pointer;transition:border-color .15s,transform .1s}
+.card:hover{border-color:#4f52d9;transform:translateY(-1px)}
+.card.status-applied{border-left:3px solid #10b981}
+.card.status-archived{opacity:.4}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.card-title{font-size:14px;font-weight:600;line-height:1.3;color:#e2e8f0}
+.score-pill{flex-shrink:0;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border:2px solid}
+.s-hi{background:#052e16;border-color:#10b981;color:#34d399}
+.s-md{background:#1c1209;border-color:#f59e0b;color:#fbbf24}
+.s-lo{background:#1c0a0a;border-color:#ef4444;color:#f87171}
+.s-no{background:#1a1d27;border-color:#374151;color:#4b5563}
+.meta{font-size:11px;color:#64748b;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.rb{background:#0c1a2e;color:#38bdf8;border:1px solid #0369a1;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600}
+.sb{background:#1e2235;color:#6366f1;border:1px solid #2d3148;border-radius:4px;padding:1px 5px;font-size:10px}
+.dims{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.dim{text-align:center}
+.dim-bar{height:3px;border-radius:2px;background:#1e2235;margin-top:2px}
+.dim-fill{height:100%;border-radius:2px;background:#6366f1}
+.dim-label{font-size:9px;color:#475569;text-transform:uppercase}
+.dim-num{font-size:10px;font-weight:700;color:#94a3b8}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:10px;border-radius:4px;padding:2px 6px}
+.t-ok{background:#052e16;color:#34d399;border:1px solid #064e1e}
+.t-gap{background:#1c0a0a;color:#f87171;border:1px solid #450a0a}
+.card-actions{display:flex;gap:5px}
+.ba{font-size:11px;font-weight:600;border:none;border-radius:6px;padding:5px 9px;cursor:pointer}
+.ba-tailor{background:#6366f1;color:#fff;flex:1}.ba-tailor:hover{background:#4f52d9}
+.ba-ok{background:#052e16;color:#34d399;border:1px solid #064e1e}.ba-ok:hover{background:#064e1e}
+.ba-arc{background:#1e2235;color:#64748b;border:1px solid #2d3148}.ba-arc:hover{background:#2d3148}
+.empty{text-align:center;padding:80px 20px;color:#374151}
 
-  select { background: #1a1d27; border: 1px solid #2d3148; border-radius: 6px; color: #e2e8f0; font-size: 13px; padding: 6px 10px; cursor: pointer; }
+/* ── SETTINGS MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.settings-modal{background:#13151f;border:1px solid #2d3148;border-radius:16px;width:92vw;max-width:900px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.sm-header{padding:16px 20px;border-bottom:1px solid #2d3148;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sm-header h2{font-size:16px;font-weight:700}
+.sm-close{background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;padding:2px 6px;border-radius:6px}
+.sm-close:hover{background:#1e2235;color:#e2e8f0}
+.sm-tabs{display:flex;gap:0;border-bottom:1px solid #2d3148;flex-shrink:0}
+.sm-tab{padding:10px 20px;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none}
+.sm-tab.active{color:#6366f1;border-bottom-color:#6366f1}
+.sm-body{flex:1;overflow-y:auto;padding:20px}
+.sm-section{margin-bottom:20px}
+.sm-section label{display:block;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.sm-section textarea{width:100%;background:#1a1d27;border:1px solid #2d3148;border-radius:8px;color:#e2e8f0;font-size:12px;padding:10px 12px;resize:vertical;font-family:inherit;min-height:80px}
+.sm-section textarea:focus{outline:none;border-color:#6366f1}
+.tags-editor{display:flex;flex-wrap:wrap;gap:6px;background:#1a1d27;border:1px solid #2d3148;border-radius:8px;padding:10px;min-height:60px}
+.te-tag{display:flex;align-items:center;gap:4px;background:#1e2235;border:1px solid #2d3148;border-radius:6px;padding:3px 8px;font-size:12px;color:#e2e8f0}
+.te-tag button{background:none;border:none;color:#64748b;cursor:pointer;font-size:13px;line-height:1;padding:0}
+.te-tag button:hover{color:#f87171}
+.te-add{display:flex;gap:6px;margin-top:8px}
+.te-add input{flex:1;background:#1a1d27;border:1px solid #2d3148;border-radius:6px;color:#e2e8f0;font-size:12px;padding:6px 10px}
+.te-add input:focus{outline:none;border-color:#6366f1}
+.te-add button{background:#6366f1;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer}
+.sm-footer{padding:14px 20px;border-top:1px solid #2d3148;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+.btn-save{background:#6366f1;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-save:hover{background:#4f52d9}
+.btn-cancel{background:#1e2235;color:#94a3b8;border:1px solid #2d3148;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer}
 
-  .stats { display: flex; gap: 8px; margin-left: auto; }
-  .stat { background: #1a1d27; border: 1px solid #2d3148; border-radius: 6px; padding: 5px 12px; font-size: 12px; color: #64748b; }
-  .stat strong { color: #e2e8f0; }
+/* ── TAILOR MODAL ── */
+.tailor-modal{background:#13151f;border:1px solid #2d3148;border-radius:16px;width:95vw;max-width:1200px;height:92vh;margin:auto;display:flex;flex-direction:column;overflow:hidden}
+.tm-header{padding:14px 18px;border-bottom:1px solid #2d3148;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-shrink:0}
+.tm-header h2{font-size:15px;font-weight:700}
+.tm-header p{font-size:11px;color:#64748b;margin-top:2px}
+.tm-body{display:flex;flex:1;overflow:hidden}
+.jd-panel{width:280px;flex-shrink:0;border-right:1px solid #2d3148;display:flex;flex-direction:column;overflow:hidden}
+.panel-title{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px 8px;border-bottom:1px solid #1e2235;flex-shrink:0}
+.jd-text{flex:1;overflow-y:auto;padding:10px 14px;font-size:11px;line-height:1.6;color:#94a3b8;white-space:pre-wrap}
+.chat-panel{flex:1;min-width:300px;display:flex;flex-direction:column;overflow:hidden}
+.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:85%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5}
+.msg-ai{background:#1a1d27;border:1px solid #2d3148;align-self:flex-start;color:#e2e8f0}
+.msg-ai strong{color:#818cf8}
+.msg-ai ul{padding-left:16px;margin-top:4px}
+.msg-ai li{margin-bottom:3px}
+.msg-user{background:#6366f1;color:#fff;align-self:flex-end;border-radius:12px 12px 2px 12px}
+.quick-prompts{padding:6px 14px;display:flex;gap:5px;flex-wrap:wrap;border-top:1px solid #1e2235}
+.qp{background:#1e2235;border:1px solid #2d3148;border-radius:6px;padding:3px 9px;font-size:11px;color:#94a3b8;cursor:pointer}
+.qp:hover{border-color:#6366f1;color:#818cf8}
+.chat-input-row{padding:10px 14px;border-top:1px solid #2d3148;display:flex;gap:7px;flex-shrink:0}
+.chat-input-row textarea{flex:1;background:#1a1d27;border:1px solid #2d3148;border-radius:8px;color:#e2e8f0;font-size:13px;padding:8px 11px;resize:none;height:54px;font-family:inherit}
+.chat-input-row textarea:focus{outline:none;border-color:#6366f1}
+.send-btn{background:#6366f1;color:#fff;border:none;border-radius:8px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer}
+.send-btn:hover{background:#4f52d9}
+.send-btn:disabled{background:#374151;cursor:not-allowed}
+.cv-panel{width:330px;flex-shrink:0;border-left:1px solid #2d3148;display:flex;flex-direction:column;overflow:hidden}
+/* Narrow windows: stack JD / chat / CV vertically so chat never collapses */
+@media (max-width:1000px){
+  .tm-body{flex-direction:column;overflow-y:auto}
+  .jd-panel,.chat-panel,.cv-panel{width:auto;min-width:0;border:none;border-bottom:1px solid #2d3148}
+  .jd-panel{max-height:24vh}
+  .chat-panel{min-height:42vh}
+  .cv-panel{min-height:40vh}
+}
+.cv-panel-hdr{padding:10px 14px 8px;border-bottom:1px solid #1e2235;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cv-panel-hdr h3{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+.dl-btns{display:flex;gap:6px}
+.pdf-btn{background:#052e16;color:#34d399;border:1px solid #064e1e;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer}
+.pdf-btn:hover{background:#064e1e}
+.pdf-btn.doc{background:#0c1f3a;color:#60a5fa;border-color:#15336b}
+.pdf-btn.doc:hover{background:#15336b}
+.pdf-btn:disabled{opacity:.6;cursor:default}
+.cv-content{flex:1;overflow-y:auto;padding:14px}
+.cv-sec{margin-bottom:14px}
+.cv-sec h4{font-size:10px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.cv-bullet{background:#1a1d27;border:1px solid #2d3148;border-radius:6px;padding:7px 9px;margin-bottom:5px;font-size:11px;line-height:1.5;color:#94a3b8;position:relative}
+.cv-bullet.modified{border-color:#6366f1;background:#12103a;color:#e2e8f0}
+.cv-bullet.modified::before{content:'✏️';position:absolute;top:5px;right:7px;font-size:10px}
+.typing{display:flex;gap:4px;padding:9px 13px;background:#1a1d27;border:1px solid #2d3148;border-radius:12px;align-self:flex-start;width:fit-content}
+.typing span{width:6px;height:6px;background:#6366f1;border-radius:50%;animation:bounce 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
 
-  main { padding: 24px 28px; }
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:#1e2235;border:1px solid #4f52d9;color:#e2e8f0;padding:9px 15px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
-
-  .card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.15s; position: relative; }
-  .card:hover { border-color: #4f52d9; }
-  .card.status-applied { border-left: 3px solid #10b981; }
-  .card.status-archived { opacity: 0.45; }
-
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .card-title { font-size: 15px; font-weight: 600; line-height: 1.3; }
-  .card-title a { color: #e2e8f0; text-decoration: none; }
-  .card-title a:hover { color: #818cf8; }
-
-  .score-pill { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; border: 2px solid; }
-  .score-high  { background: #052e16; border-color: #10b981; color: #34d399; }
-  .score-mid   { background: #1c1209; border-color: #f59e0b; color: #fbbf24; }
-  .score-low   { background: #1c0a0a; border-color: #ef4444; color: #f87171; }
-  .score-none  { background: #1a1d27; border-color: #374151; color: #4b5563; }
-
-  .meta { font-size: 12px; color: #64748b; display: flex; flex-wrap: wrap; gap: 6px; }
-  .meta span { display: flex; align-items: center; gap: 3px; }
-  .remote-badge { background: #0c1a2e; color: #38bdf8; border: 1px solid #0369a1; border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; }
-
-  .dims { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-  .dim { text-align: center; }
-  .dim-bar { height: 4px; border-radius: 2px; background: #1e2235; margin-top: 3px; overflow: hidden; }
-  .dim-fill { height: 100%; border-radius: 2px; background: #6366f1; }
-  .dim-label { font-size: 9px; color: #475569; text-transform: uppercase; letter-spacing: 0.3px; }
-  .dim-num { font-size: 11px; font-weight: 700; color: #94a3b8; }
-
-  .competencies { display: flex; flex-wrap: wrap; gap: 5px; }
-  .tag { font-size: 11px; border-radius: 4px; padding: 2px 7px; }
-  .tag-match { background: #052e16; color: #34d399; border: 1px solid #064e1e; }
-  .tag-gap   { background: #1c0a0a; color: #f87171; border: 1px solid #450a0a; }
-
-  .reasoning { font-size: 12px; color: #64748b; line-height: 1.5; border-top: 1px solid #1e2235; padding-top: 10px; }
-
-  .card-actions { display: flex; gap: 8px; margin-top: 4px; }
-  .btn { font-size: 12px; font-weight: 600; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: background 0.15s; }
-  .btn-apply  { background: #052e16; color: #34d399; border: 1px solid #064e1e; }
-  .btn-apply:hover { background: #064e1e; }
-  .btn-archive { background: #1e2235; color: #64748b; border: 1px solid #2d3148; }
-  .btn-archive:hover { background: #2d3148; }
-
-  .human-loop-banner { background: #1c1209; border: 1px solid #78350f; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fbbf24; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-
-  .empty { text-align: center; padding: 80px 20px; color: #374151; }
-  .empty h2 { font-size: 20px; margin-bottom: 8px; }
-
-  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e2235; border: 1px solid #4f52d9; color: #e2e8f0; padding: 12px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 999; }
-  .toast.show { opacity: 1; }
-
-  .scanning { display: inline-block; width: 10px; height: 10px; border: 2px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* PRINT */
+@media print{body *{visibility:hidden}#pdf-content,#pdf-content *{visibility:visible}#pdf-content{position:fixed;inset:0;background:#fff;color:#000;padding:40px;font-family:Georgia,serif;font-size:11pt;line-height:1.6}}
 </style>
+<script src="/lib/cv.js"></script>
 </head>
 <body>
 
 <header>
   <h1>⚡ <span>Byte</span> Engine</h1>
-  <div class="header-right">
+  <div class="hdr-right">
     <span class="badge" id="total-badge">— jobs</span>
-    <button class="scan-btn" id="scan-btn" onclick="runScan()">
+    <button class="btn-hdr btn-settings" onclick="openSettings()">⚙ Settings</button>
+    <button class="btn-hdr btn-paste" onclick="openPaste()">+ Paste JD</button>
+    <button class="btn-hdr btn-scan" id="scan-btn" onclick="runScan()">
       <span id="scan-icon">↻</span> Scan now
     </button>
   </div>
@@ -102,16 +178,22 @@
 
 <div class="toolbar">
   <label>Min score</label>
-  <div class="filter-row">
-    <input type="range" id="min-score" min="0" max="5" step="0.5" value="0" oninput="onFilter()">
-    <span class="score-val" id="score-display">All</span>
-  </div>
+  <input type="range" id="min-score" min="0" max="5" step="0.5" value="0" oninput="onFilter()">
+  <span class="score-val" id="score-display">All</span>
   <select id="status-filter" onchange="onFilter()">
     <option value="">All statuses</option>
     <option value="new">New</option>
     <option value="scored">Scored</option>
     <option value="applied">Applied</option>
     <option value="archived">Archived</option>
+  </select>
+  <select id="source-filter" onchange="onFilter()">
+    <option value="">All sources</option>
+    <option value="greenhouse">Greenhouse</option>
+    <option value="lever">Lever</option>
+    <option value="ashby">Ashby</option>
+    <option value="adzuna">Adzuna (AU/IN)</option>
+    <option value="manual">Manual</option>
   </select>
   <select id="company-filter" onchange="onFilter()">
     <option value="">All companies</option>
@@ -124,171 +206,467 @@
 </div>
 
 <main>
-  <div class="human-loop-banner">
-    🛡️ <strong>Human-in-the-loop enforced:</strong> This tool can prepare a tailored CV and pre-fill an application — but <em>never auto-submits</em>. You approve every application.
-  </div>
+  <div class="human-loop">🛡️ <strong>Human-in-the-loop enforced:</strong> This tool prepares tailored CVs — but <em>never auto-submits</em>. You approve every application.</div>
   <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" style="display:none">
-    <h2>No jobs match your filters</h2>
-    <p>Try lowering the min score or changing the status filter.</p>
-  </div>
+  <div class="empty" id="empty" style="display:none"><h2>No jobs match your filters</h2><p>Try adjusting the filters or run a new scan.</p></div>
 </main>
+
+<!-- ── SETTINGS MODAL ── -->
+<div class="overlay" id="settings-overlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-modal" onclick="event.stopPropagation()">
+    <div class="sm-header">
+      <h2>⚙ Settings</h2>
+      <button class="sm-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="sm-tabs">
+      <button class="sm-tab active" onclick="switchTab('cv')">My CV</button>
+      <button class="sm-tab" onclick="switchTab('keywords')">Keywords</button>
+      <button class="sm-tab" onclick="switchTab('locations')">Locations</button>
+      <button class="sm-tab" onclick="switchTab('sources')">Sources</button>
+    </div>
+    <div class="sm-body">
+      <!-- CV tab -->
+      <div id="tab-cv">
+        <div class="sm-section">
+          <label>Your CV (plain text — used for scoring &amp; tailoring)</label>
+          <textarea id="cv-text" rows="20" placeholder="Paste your CV here…"></textarea>
+        </div>
+      </div>
+      <!-- Keywords tab -->
+      <div id="tab-keywords" style="display:none">
+        <div class="sm-section">
+          <label>Job title keywords to search for</label>
+          <div class="tags-editor" id="kw-tags"></div>
+          <div class="te-add">
+            <input id="kw-input" placeholder="Add keyword e.g. 'solutions engineer'" onkeydown="if(event.key==='Enter')addKeyword()">
+            <button onclick="addKeyword()">+ Add</button>
+          </div>
+        </div>
+      </div>
+      <!-- Locations tab -->
+      <div id="tab-locations" style="display:none">
+        <div class="sm-section">
+          <label>Location keywords to filter by (leave empty = all locations)</label>
+          <div class="tags-editor" id="loc-tags"></div>
+          <div class="te-add">
+            <input id="loc-input" placeholder="e.g. 'australia', 'bangalore', 'remote'" onkeydown="if(event.key==='Enter')addLocation()">
+            <button onclick="addLocation()">+ Add</button>
+          </div>
+        </div>
+      </div>
+      <!-- Sources tab -->
+      <div id="tab-sources" style="display:none">
+        <div class="sm-section">
+          <label>Greenhouse boards</label>
+          <div class="tags-editor" id="gh-tags"></div>
+          <div class="te-add">
+            <input id="gh-input" placeholder="Company slug e.g. 'atlassian'" onkeydown="if(event.key==='Enter')addSource('gh')">
+            <button onclick="addSource('gh')">+ Add</button>
+          </div>
+        </div>
+        <div class="sm-section" style="margin-top:16px">
+          <label>Lever boards</label>
+          <div class="tags-editor" id="lv-tags"></div>
+          <div class="te-add">
+            <input id="lv-input" placeholder="Company slug e.g. 'notion'" onkeydown="if(event.key==='Enter')addSource('lv')">
+            <button onclick="addSource('lv')">+ Add</button>
+          </div>
+        </div>
+        <div class="sm-section" style="margin-top:16px">
+          <label>Ashby boards</label>
+          <div class="tags-editor" id="ab-tags"></div>
+          <div class="te-add">
+            <input id="ab-input" placeholder="Company slug e.g. 'posthog'" onkeydown="if(event.key==='Enter')addSource('ab')">
+            <button onclick="addSource('ab')">+ Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sm-footer">
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">Save &amp; apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAILOR MODAL ── -->
+<div class="overlay" id="tailor-overlay" onclick="if(event.target===this)closeTailor()">
+  <div class="tailor-modal" onclick="event.stopPropagation()">
+    <div class="tm-header">
+      <div>
+        <h2 id="tm-title"></h2>
+        <p id="tm-meta"></p>
+      </div>
+      <button class="sm-close" onclick="closeTailor()">✕</button>
+    </div>
+    <div class="tm-body">
+      <div class="jd-panel">
+        <div class="panel-title">Job Description</div>
+        <div class="jd-text" id="jd-text"></div>
+      </div>
+      <div class="chat-panel">
+        <div class="chat-msgs" id="chat-msgs"></div>
+        <div class="quick-prompts">
+          <span class="qp" onclick="sendQuick('Rewrite all my CV bullets to match this JD')">Rewrite all bullets</span>
+          <span class="qp" onclick="sendQuick('What are my top 3 gaps for this role?')">Show gaps</span>
+          <span class="qp" onclick="sendQuick('Which of my experiences best match this JD?')">Best matches</span>
+          <span class="qp" onclick="sendQuick('Suggest a tailored opening summary for this role')">Tailor summary</span>
+        </div>
+        <div class="chat-input-row">
+          <textarea id="chat-input" placeholder="Ask anything — e.g. 'Rewrite my bullets for this SE role'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMsg()">Send</button>
+        </div>
+      </div>
+      <div class="cv-panel">
+        <div class="cv-panel-hdr">
+          <h3>Tailored CV</h3>
+          <div class="dl-btns">
+            <button class="pdf-btn" onclick="downloadCV('pdf')">⬇ PDF</button>
+            <button class="pdf-btn doc" onclick="downloadCV('docx')">⬇ Word</button>
+          </div>
+        </div>
+        <div class="cv-content" id="cv-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
-<script>
-let allJobs = [];
+<!-- ── PASTE JD MODAL ── -->
+<div class="overlay" id="paste-overlay" onclick="if(event.target===this)closePaste()">
+  <div class="settings-modal" style="max-width:620px" onclick="event.stopPropagation()">
+    <div class="sm-header">
+      <h2>+ Paste a Job Description</h2>
+      <button class="sm-close" onclick="closePaste()">✕</button>
+    </div>
+    <div class="sm-body" style="display:flex;flex-direction:column;gap:14px">
+      <p style="font-size:12px;color:#64748b">For LinkedIn roles or anything not in the ATS feeds — paste the JD and it goes straight into your tracker ready to tailor.</p>
+      <div class="sm-section">
+        <label>Job Title *</label>
+        <textarea id="pj-title" rows="1" placeholder="e.g. Solutions Engineer, APAC" style="resize:none;height:38px"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="sm-section">
+          <label>Company *</label>
+          <textarea id="pj-company" rows="1" placeholder="e.g. Salesforce" style="resize:none;height:38px"></textarea>
+        </div>
+        <div class="sm-section">
+          <label>Location</label>
+          <textarea id="pj-location" rows="1" placeholder="e.g. Sydney, AU · Remote" style="resize:none;height:38px"></textarea>
+        </div>
+      </div>
+      <div class="sm-section">
+        <label>Job URL (optional)</label>
+        <textarea id="pj-url" rows="1" placeholder="https://linkedin.com/jobs/..." style="resize:none;height:38px"></textarea>
+      </div>
+      <div class="sm-section">
+        <label>Job Description (paste the full JD) *</label>
+        <textarea id="pj-desc" rows="12" placeholder="Paste the full job description here…"></textarea>
+      </div>
+    </div>
+    <div class="sm-footer">
+      <button class="btn-cancel" onclick="closePaste()">Cancel</button>
+      <button class="btn-save" onclick="submitPaste()">Add to tracker</button>
+    </div>
+  </div>
+</div>
 
-async function load() {
-  const res = await fetch('/api/jobs');
-  allJobs = await res.json();
+<script>
+let allJobs = [], cfg = {}, cvText = '', activeJob = null, chatHistory = [], tailoredBullets = {}, origBullets = {};
+let activeTab = 'cv';
+
+// ── BOOT ──────────────────────────────────────────────────
+async function boot() {
+  [allJobs, cfg, { text: cvText }] = await Promise.all([
+    fetch('/api/jobs').then(r=>r.json()),
+    fetch('/api/config').then(r=>r.json()),
+    fetch('/api/cv').then(r=>r.json()),
+  ]);
   populateCompanyFilter();
   renderStats();
   render();
 }
 
+// ── RENDER GRID ───────────────────────────────────────────
 function populateCompanyFilter() {
   const sel = document.getElementById('company-filter');
-  const companies = [...new Set(allJobs.map(j => j.company))].sort();
-  companies.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    sel.appendChild(o);
+  // clear old options except first
+  while (sel.options.length > 1) sel.remove(1);
+  [...new Set(allJobs.map(j=>j.company))].sort().forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
   });
 }
 
 function onFilter() {
   const v = parseFloat(document.getElementById('min-score').value);
-  document.getElementById('score-display').textContent = v > 0 ? v.toFixed(1) : 'All';
+  document.getElementById('score-display').textContent = v>0?v.toFixed(1):'All';
   render();
 }
 
 function render() {
   const minScore = parseFloat(document.getElementById('min-score').value);
-  const statusF  = document.getElementById('status-filter').value;
-  const companyF = document.getElementById('company-filter').value;
-
-  let jobs = allJobs.filter(j => {
-    if (minScore > 0 && (!j.score || j.score.total < minScore)) return false;
-    if (statusF && j.status !== statusF) return false;
-    if (companyF && j.company !== companyF) return false;
+  const sf = document.getElementById('status-filter').value;
+  const src = document.getElementById('source-filter').value;
+  const cf = document.getElementById('company-filter').value;
+  const jobs = allJobs.filter(j => {
+    if (minScore>0 && (!j.score||j.score.total<minScore)) return false;
+    if (sf  && j.status!==sf)   return false;
+    if (src && j.source!==src)  return false;
+    if (cf  && j.company!==cf)  return false;
     return true;
-  });
+  }).sort((a,b)=>(b.score?.total??0)-(a.score?.total??0));
 
   document.getElementById('total-badge').textContent = `${jobs.length} jobs`;
-  const grid = document.getElementById('grid');
-  const empty = document.getElementById('empty');
-
-  if (!jobs.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
+  const grid = document.getElementById('grid'), empty = document.getElementById('empty');
+  if (!jobs.length) { grid.innerHTML=''; empty.style.display=''; return; }
   empty.style.display = 'none';
   grid.innerHTML = jobs.map(cardHtml).join('');
 }
 
 function renderStats() {
-  document.getElementById('s-scored').textContent  = allJobs.filter(j => j.score).length;
-  document.getElementById('s-strong').textContent  = allJobs.filter(j => j.score?.total >= 4).length;
-  document.getElementById('s-applied').textContent = allJobs.filter(j => j.status === 'applied').length;
+  document.getElementById('s-scored').textContent  = allJobs.filter(j=>j.score).length;
+  document.getElementById('s-strong').textContent  = allJobs.filter(j=>j.score?.total>=4).length;
+  document.getElementById('s-applied').textContent = allJobs.filter(j=>j.status==='applied').length;
 }
 
-function scoreClass(score) {
-  if (!score) return 'score-none';
-  if (score.total >= 4) return 'score-high';
-  if (score.total >= 3) return 'score-mid';
-  return 'score-low';
-}
+function sc(s) { if(!s)return 's-no'; if(s.total>=4)return 's-hi'; if(s.total>=3)return 's-md'; return 's-lo'; }
 
-function cardHtml(job) {
-  const sc = job.score;
-  const scoreDisp = sc ? sc.total.toFixed(1) : '–';
-  const dims = sc ? `
-    <div class="dims">
-      ${dim('PS', sc.productSense)}
-      ${dim('EX', sc.execution)}
-      ${dim('IN', sc.influence)}
-      ${dim('DI', sc.discovery)}
-      ${dim('MI', sc.metricsImpact)}
-    </div>` : '';
-
-  const matched = (sc?.matchedCompetencies ?? []).map(t => `<span class="tag tag-match">✓ ${t}</span>`).join('');
-  const gaps    = (sc?.gaps ?? []).map(t => `<span class="tag tag-gap">✗ ${t}</span>`).join('');
-  const tagsHtml = (matched || gaps) ? `<div class="competencies">${matched}${gaps}</div>` : '';
-  const reasonHtml = sc?.reasoning ? `<div class="reasoning">${sc.reasoning}</div>` : '';
-  const remote = job.remote ? '<span class="remote-badge">Remote</span>' : '';
-
-  const id = encodeURIComponent(job.id);
-  return `
-  <div class="card status-${job.status}" id="card-${CSS.escape(job.id)}">
-    <div class="card-top">
-      <div class="card-title"><a href="${job.url}" target="_blank" rel="noopener">${job.title}</a></div>
-      <div class="score-pill ${scoreClass(sc)}">${scoreDisp}</div>
-    </div>
-    <div class="meta">
-      <span>🏢 ${job.company}</span>
-      <span>📍 ${job.location || '—'}</span>
-      ${remote}
-      <span style="margin-left:auto;text-transform:uppercase;font-size:10px;letter-spacing:0.5px">${job.status}</span>
+function cardHtml(j) {
+  const s = j.score, pill = s?s.total.toFixed(1):'–';
+  const dims = s?`<div class="dims">${['PS','EX','IN','DI','MI'].map((l,i)=>{
+    const v=[s.productSense,s.execution,s.influence,s.discovery,s.metricsImpact][i];
+    return `<div class="dim"><div class="dim-num">${v!=null?v.toFixed(1):'–'}</div><div class="dim-bar"><div class="dim-fill" style="width:${v!=null?(v/5)*100:0}%"></div></div><div class="dim-label">${l}</div></div>`;
+  }).join('')}</div>`:'';
+  const matched = (s?.matchedCompetencies??[]).slice(0,3).map(t=>`<span class="tag t-ok">✓ ${t}</span>`).join('');
+  const gaps    = (s?.gaps??[]).slice(0,2).map(t=>`<span class="tag t-gap">✗ ${t}</span>`).join('');
+  const id = encodeURIComponent(j.id);
+  return `<div class="card status-${j.status}" onclick="openTailor('${id}')">
+    <div class="card-top"><div class="card-title">${j.title}</div><div class="score-pill ${sc(s)}">${pill}</div></div>
+    <div class="meta">🏢 ${j.company} &nbsp;📍 ${j.location||'—'}
+      ${j.remote?'<span class="rb">Remote</span>':''}
+      <span class="sb">${j.source}</span>
+      <span style="margin-left:auto;font-size:10px;text-transform:uppercase">${j.status}</span>
     </div>
     ${dims}
-    ${tagsHtml}
-    ${reasonHtml}
-    <div class="card-actions">
-      <button class="btn btn-apply" onclick="setStatus('${id}','applied')">✓ Mark applied</button>
-      <button class="btn btn-archive" onclick="setStatus('${id}','archived')">Archive</button>
+    ${matched||gaps?`<div class="tags">${matched}${gaps}</div>`:''}
+    <div class="card-actions" onclick="event.stopPropagation()">
+      <button class="ba ba-tailor" onclick="openTailor('${id}')">✏️ Tailor CV</button>
+      <button class="ba ba-ok"  onclick="setStatus('${id}','applied')">✓</button>
+      <button class="ba ba-arc" onclick="setStatus('${id}','archived')">✕</button>
     </div>
   </div>`;
 }
 
-function dim(label, val) {
-  const pct = val != null ? (val / 5) * 100 : 0;
-  const num = val != null ? val.toFixed(1) : '–';
-  return `<div class="dim">
-    <div class="dim-num">${num}</div>
-    <div class="dim-bar"><div class="dim-fill" style="width:${pct}%"></div></div>
-    <div class="dim-label">${label}</div>
-  </div>`;
+// ── SETTINGS ─────────────────────────────────────────────
+function openSettings() {
+  // Populate from loaded cfg + cvText
+  document.getElementById('cv-text').value = cvText;
+  renderTagsEditor('kw-tags',  cfg.keywords??[],    removeKeyword);
+  renderTagsEditor('loc-tags', cfg.locations??[],   removeLocation);
+  renderTagsEditor('gh-tags',  cfg.greenhouse??[],  i=>removeSource('gh',i));
+  renderTagsEditor('lv-tags',  cfg.lever??[],       i=>removeSource('lv',i));
+  renderTagsEditor('ab-tags',  cfg.ashby??[],       i=>removeSource('ab',i));
+  switchTab('cv');
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings() { document.getElementById('settings-overlay').classList.remove('open'); }
+
+function switchTab(tab) {
+  ['cv','keywords','locations','sources'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===tab?'':'none';
+  });
+  document.querySelectorAll('.sm-tab').forEach((el,i) => {
+    el.classList.toggle('active', ['cv','keywords','locations','sources'][i]===tab);
+  });
+  activeTab = tab;
 }
 
-async function setStatus(encodedId, status) {
-  const id = decodeURIComponent(encodedId);
-  await fetch(`/api/jobs/${encodedId}`, {
+function renderTagsEditor(containerId, items, removeFn) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = items.map((item,i) => `
+    <span class="te-tag">${item}<button onclick="(${removeFn.toString()})(${i})">×</button></span>`).join('');
+}
+
+function removeKeyword(i)     { cfg.keywords.splice(i,1);    renderTagsEditor('kw-tags',  cfg.keywords,   removeKeyword); }
+function removeLocation(i)    { cfg.locations.splice(i,1);   renderTagsEditor('loc-tags', cfg.locations,  removeLocation); }
+function removeSource(src, i) {
+  const key = src==='gh'?'greenhouse':src==='lv'?'lever':'ashby';
+  cfg[key].splice(i,1);
+  renderTagsEditor(src+'-tags', cfg[key], j=>removeSource(src,j));
+}
+
+function addKeyword() {
+  const inp = document.getElementById('kw-input'); const v = inp.value.trim().toLowerCase();
+  if (v && !cfg.keywords.includes(v)) { cfg.keywords.push(v); renderTagsEditor('kw-tags', cfg.keywords, removeKeyword); }
+  inp.value = '';
+}
+function addLocation() {
+  const inp = document.getElementById('loc-input'); const v = inp.value.trim().toLowerCase();
+  if (v && !cfg.locations.includes(v)) { cfg.locations.push(v); renderTagsEditor('loc-tags', cfg.locations, removeLocation); }
+  inp.value = '';
+}
+function addSource(src) {
+  const inp = document.getElementById(src+'-input'); const v = inp.value.trim().toLowerCase();
+  const key = src==='gh'?'greenhouse':src==='lv'?'lever':'ashby';
+  if (v && !cfg[key].includes(v)) { cfg[key].push(v); renderTagsEditor(src+'-tags', cfg[key], i=>removeSource(src,i)); }
+  inp.value = '';
+}
+
+async function saveSettings() {
+  cvText = document.getElementById('cv-text').value;
+  await Promise.all([
+    fetch('/api/config', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(cfg) }),
+    fetch('/api/cv',     { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ text: cvText }) }),
+  ]);
+  closeSettings();
+  toast('Settings saved ✓ — run a scan to fetch jobs with new config');
+}
+
+// ── TAILOR ───────────────────────────────────────────────
+function openTailor(encodedId) {
+  const job = allJobs.find(j=>j.id===decodeURIComponent(encodedId));
+  if (!job) return;
+  activeJob = job; chatHistory = [];
+  // Build bullet sections from CV text
+  origBullets = parseCVBullets(cvText);
+  tailoredBullets = JSON.parse(JSON.stringify(origBullets));
+  document.getElementById('tm-title').textContent = job.title;
+  document.getElementById('tm-meta').textContent  = `${job.company} · ${job.location}`;
+  document.getElementById('jd-text').textContent  = cleanJD(job.description) || 'No description.';
+  document.getElementById('chat-msgs').innerHTML  = '';
+  renderCV();
+  addAI(`Hi! I've loaded the JD for **${job.title}** at **${job.company}** alongside your CV.\n\nWhat would you like?\n- **Rewrite all my CV bullets to match this JD**\n- **Show my top gaps for this role**\n- **Which of my experiences best match?**\n\nOr type anything.`);
+  document.getElementById('tailor-overlay').classList.add('open');
+}
+function closeTailor() { document.getElementById('tailor-overlay').classList.remove('open'); activeJob=null; }
+
+// JD cleaning + CV parsing come from the shared /lib/cv.js module, so the
+// browser and server can never disagree on how the CV is interpreted.
+const cleanJD = s => CV.cleanHtml(s);
+const parseCVBullets = cv => CV.bulletsByCompany(CV.parseCv(cv));
+
+function renderCV() {
+  const c = document.getElementById('cv-content');
+  const entries = Object.entries(tailoredBullets);
+  if (!entries.length) { c.innerHTML = '<p style="color:#64748b;font-size:12px;padding:10px">No bullets parsed — make sure your CV is saved in Settings.</p>'; return; }
+  c.innerHTML = entries.map(([company, bullets]) => `
+    <div class="cv-sec">
+      <h4>${company}</h4>
+      ${bullets.map((b,i)=>`<div class="cv-bullet ${b!==(origBullets[company]??[])[i]?'modified':''}">${b}</div>`).join('')}
+    </div>`).join('');
+}
+
+function applyBullets(rewrites) {
+  let changed = false;
+  Object.entries(rewrites).forEach(([co, bs]) => {
+    if (!Array.isArray(bs) || !bs.length) return;
+    // Match Claude's company key to an existing section via shared matcher
+    const key = CV.matchCompanyKey(Object.keys(tailoredBullets), co);
+    if (key) tailoredBullets[key] = bs;        // full replace for that role
+    else tailoredBullets[co] = bs;             // new section as a fallback
+    changed = true;
+  });
+  if (changed) { renderCV(); toast('CV updated ✏️'); }
+}
+
+// ── CHAT ─────────────────────────────────────────────────
+function sendQuick(t) { document.getElementById('chat-input').value=t; sendMsg(); }
+
+async function sendMsg() {
+  const inp = document.getElementById('chat-input'), text = inp.value.trim();
+  if (!text||!activeJob) return;
+  inp.value = ''; addUser(text); chatHistory.push({role:'user',content:text});
+  const btn = document.getElementById('send-btn'); btn.disabled=true; showTyping();
+  try {
+    const r = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jobId:activeJob.id,message:text,history:chatHistory})});
+    const d = await r.json(); removeTyping();
+    addAI(d.reply); chatHistory.push({role:'assistant',content:d.reply});
+    if (d.bullets) applyBullets(d.bullets);
+  } catch(e) { removeTyping(); addAI('Error: '+e.message); }
+  btn.disabled=false;
+}
+
+function addUser(t) { const e=document.createElement('div'); e.className='msg msg-user'; e.textContent=t; document.getElementById('chat-msgs').appendChild(e); scrollChat(); }
+function addAI(t)   { const e=document.createElement('div'); e.className='msg msg-ai'; e.innerHTML=md(t); document.getElementById('chat-msgs').appendChild(e); scrollChat(); }
+function showTyping(){ const e=document.createElement('div'); e.className='typing'; e.id='typing'; e.innerHTML='<span></span><span></span><span></span>'; document.getElementById('chat-msgs').appendChild(e); scrollChat(); }
+function removeTyping(){ document.getElementById('typing')?.remove(); }
+function scrollChat(){ const c=document.getElementById('chat-msgs'); c.scrollTop=c.scrollHeight; }
+function md(t){ return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/^[-•] (.+)$/gm,'<li>$1</li>').replace(/(<li>[\s\S]+<\/li>)/,'<ul>$1</ul>').replace(/\n/g,'<br>'); }
+
+// ── DOWNLOAD (PDF / Word) ────────────────────────────────
+async function downloadCV(format) {
+  if (!activeJob) return;
+  const btn = document.querySelector(format === 'pdf' ? '.pdf-btn' : '.pdf-btn.doc');
+  const label = btn.textContent;
+  btn.textContent = '⏳ Generating…'; btn.disabled = true;
+  // Save tailored bullets to tracker first so the doc reflects the latest edits
+  await fetch(`/api/jobs/${encodeURIComponent(activeJob.id)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ tailoredBullets }),
   });
-  const job = allJobs.find(j => j.id === id);
-  if (job) job.status = status;
-  renderStats();
-  render();
-  toast(status === 'applied' ? '✓ Marked as applied' : 'Archived');
+  const route = format === 'pdf' ? 'download-cv' : 'download-docx';
+  window.location.href = `/${route}/${encodeURIComponent(activeJob.id)}`;
+  setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 3000);
+}
+
+// ── STATUS / SCAN ─────────────────────────────────────────
+async function setStatus(encodedId, status) {
+  const id = decodeURIComponent(encodedId);
+  await fetch(`/api/jobs/${encodedId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  const j = allJobs.find(j=>j.id===id); if(j) j.status=status;
+  renderStats(); render();
+  toast(status==='applied'?'✓ Marked applied':'Archived');
 }
 
 async function runScan() {
-  const btn  = document.getElementById('scan-btn');
-  const icon = document.getElementById('scan-icon');
-  btn.disabled = true;
-  icon.className = 'scanning';
-  toast('Scanning Greenhouse boards…');
-  try {
-    const res  = await fetch('/api/scan', { method: 'POST' });
-    const data = await res.json();
-    await load();
-    toast('Scan complete — tracker updated');
-  } catch(e) {
-    toast('Scan failed: ' + e.message);
-  }
-  btn.disabled = false;
-  icon.className = '';
-  icon.textContent = '↻';
+  const btn=document.getElementById('scan-btn'), icon=document.getElementById('scan-icon');
+  btn.disabled=true; icon.className='spin'; toast('Scanning all sources…');
+  const r = await fetch('/api/scan',{method:'POST'}); const d = await r.json();
+  allJobs = await fetch('/api/jobs').then(r=>r.json());
+  populateCompanyFilter(); renderStats(); render();
+  toast('Scan complete — '+allJobs.length+' jobs');
+  btn.disabled=false; icon.className=''; icon.textContent='↻';
 }
 
 function toast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+  const e=document.getElementById('toast'); e.textContent=msg; e.classList.add('show');
+  setTimeout(()=>e.classList.remove('show'),3000);
 }
 
-load();
+// ── PASTE JD ─────────────────────────────────────────────
+function openPaste() {
+  ['pj-title','pj-company','pj-location','pj-url','pj-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('paste-overlay').classList.add('open');
+}
+function closePaste() { document.getElementById('paste-overlay').classList.remove('open'); }
+
+async function submitPaste() {
+  const title   = document.getElementById('pj-title').value.trim();
+  const company = document.getElementById('pj-company').value.trim();
+  const desc    = document.getElementById('pj-desc').value.trim();
+  if (!title || !company || !desc) { toast('Title, company and JD are required'); return; }
+  const job = await fetch('/api/jobs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title, company,
+      location:    document.getElementById('pj-location').value.trim(),
+      url:         document.getElementById('pj-url').value.trim(),
+      description: desc,
+    }),
+  }).then(r => r.json());
+  allJobs.unshift(job);
+  populateCompanyFilter();
+  renderStats();
+  render();
+  closePaste();
+  toast(`"${title}" added — open it to tailor your CV`);
+}
+
+boot();
 </script>
 </body>
 </html>

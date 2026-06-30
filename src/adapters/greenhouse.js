@@ -10,19 +10,9 @@
 
 const https = require('https');
 const { makeJob } = require('../schema');
+const { cleanHtml } = require('../lib/cv');
 
 const BASE = 'https://boards-api.greenhouse.io/v1/boards';
-
-function stripHtml(html) {
-  return html
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-}
 
 function inferRemote(location, description) {
   const hay = `${location} ${description}`.toLowerCase();
@@ -64,7 +54,7 @@ async function fetchGreenhouse(boardToken, keywords = []) {
       return keywords.some((kw) => title.includes(kw.toLowerCase()));
     })
     .map((j) => {
-      const description = j.content ? stripHtml(j.content) : '';
+      const description = j.content ? cleanHtml(j.content) : '';
       const location = j.location?.name ?? '';
       return makeJob({
         title: j.title ?? '',
