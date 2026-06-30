@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Byte Engine — PM Job Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+
+  header { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  header h1 span { color: #6366f1; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .badge { font-size: 12px; background: #1e2235; border: 1px solid #2d3148; border-radius: 6px; padding: 4px 10px; color: #94a3b8; }
+
+  .scan-btn { background: #6366f1; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+  .scan-btn:hover { background: #4f52d9; }
+  .scan-btn:disabled { background: #374151; color: #6b7280; cursor: not-allowed; }
+
+  .toolbar { padding: 16px 28px; display: flex; align-items: center; gap: 14px; background: #13151f; border-bottom: 1px solid #1e2235; }
+  .toolbar label { font-size: 13px; color: #94a3b8; }
+  .filter-row { display: flex; align-items: center; gap: 8px; }
+  input[type=range] { accent-color: #6366f1; cursor: pointer; width: 140px; }
+  .score-val { font-size: 13px; font-weight: 700; color: #6366f1; min-width: 28px; }
+
+  select { background: #1a1d27; border: 1px solid #2d3148; border-radius: 6px; color: #e2e8f0; font-size: 13px; padding: 6px 10px; cursor: pointer; }
+
+  .stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat { background: #1a1d27; border: 1px solid #2d3148; border-radius: 6px; padding: 5px 12px; font-size: 12px; color: #64748b; }
+  .stat strong { color: #e2e8f0; }
+
+  main { padding: 24px 28px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+
+  .card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.15s; position: relative; }
+  .card:hover { border-color: #4f52d9; }
+  .card.status-applied { border-left: 3px solid #10b981; }
+  .card.status-archived { opacity: 0.45; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card-title { font-size: 15px; font-weight: 600; line-height: 1.3; }
+  .card-title a { color: #e2e8f0; text-decoration: none; }
+  .card-title a:hover { color: #818cf8; }
+
+  .score-pill { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; border: 2px solid; }
+  .score-high  { background: #052e16; border-color: #10b981; color: #34d399; }
+  .score-mid   { background: #1c1209; border-color: #f59e0b; color: #fbbf24; }
+  .score-low   { background: #1c0a0a; border-color: #ef4444; color: #f87171; }
+  .score-none  { background: #1a1d27; border-color: #374151; color: #4b5563; }
+
+  .meta { font-size: 12px; color: #64748b; display: flex; flex-wrap: wrap; gap: 6px; }
+  .meta span { display: flex; align-items: center; gap: 3px; }
+  .remote-badge { background: #0c1a2e; color: #38bdf8; border: 1px solid #0369a1; border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 600; }
+
+  .dims { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .dim { text-align: center; }
+  .dim-bar { height: 4px; border-radius: 2px; background: #1e2235; margin-top: 3px; overflow: hidden; }
+  .dim-fill { height: 100%; border-radius: 2px; background: #6366f1; }
+  .dim-label { font-size: 9px; color: #475569; text-transform: uppercase; letter-spacing: 0.3px; }
+  .dim-num { font-size: 11px; font-weight: 700; color: #94a3b8; }
+
+  .competencies { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { font-size: 11px; border-radius: 4px; padding: 2px 7px; }
+  .tag-match { background: #052e16; color: #34d399; border: 1px solid #064e1e; }
+  .tag-gap   { background: #1c0a0a; color: #f87171; border: 1px solid #450a0a; }
+
+  .reasoning { font-size: 12px; color: #64748b; line-height: 1.5; border-top: 1px solid #1e2235; padding-top: 10px; }
+
+  .card-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .btn { font-size: 12px; font-weight: 600; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: background 0.15s; }
+  .btn-apply  { background: #052e16; color: #34d399; border: 1px solid #064e1e; }
+  .btn-apply:hover { background: #064e1e; }
+  .btn-archive { background: #1e2235; color: #64748b; border: 1px solid #2d3148; }
+  .btn-archive:hover { background: #2d3148; }
+
+  .human-loop-banner { background: #1c1209; border: 1px solid #78350f; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fbbf24; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+
+  .empty { text-align: center; padding: 80px 20px; color: #374151; }
+  .empty h2 { font-size: 20px; margin-bottom: 8px; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #1e2235; border: 1px solid #4f52d9; color: #e2e8f0; padding: 12px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; }
+
+  .scanning { display: inline-block; width: 10px; height: 10px; border: 2px solid #6366f1; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ <span>Byte</span> Engine</h1>
+  <div class="header-right">
+    <span class="badge" id="total-badge">— jobs</span>
+    <button class="scan-btn" id="scan-btn" onclick="runScan()">
+      <span id="scan-icon">↻</span> Scan now
+    </button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <label>Min score</label>
+  <div class="filter-row">
+    <input type="range" id="min-score" min="0" max="5" step="0.5" value="0" oninput="onFilter()">
+    <span class="score-val" id="score-display">All</span>
+  </div>
+  <select id="status-filter" onchange="onFilter()">
+    <option value="">All statuses</option>
+    <option value="new">New</option>
+    <option value="scored">Scored</option>
+    <option value="applied">Applied</option>
+    <option value="archived">Archived</option>
+  </select>
+  <select id="company-filter" onchange="onFilter()">
+    <option value="">All companies</option>
+  </select>
+  <div class="stats">
+    <div class="stat">Scored: <strong id="s-scored">0</strong></div>
+    <div class="stat">≥4.0: <strong id="s-strong">0</strong></div>
+    <div class="stat">Applied: <strong id="s-applied">0</strong></div>
+  </div>
+</div>
+
+<main>
+  <div class="human-loop-banner">
+    🛡️ <strong>Human-in-the-loop enforced:</strong> This tool can prepare a tailored CV and pre-fill an application — but <em>never auto-submits</em>. You approve every application.
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">
+    <h2>No jobs match your filters</h2>
+    <p>Try lowering the min score or changing the status filter.</p>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allJobs = [];
+
+async function load() {
+  const res = await fetch('/api/jobs');
+  allJobs = await res.json();
+  populateCompanyFilter();
+  renderStats();
+  render();
+}
+
+function populateCompanyFilter() {
+  const sel = document.getElementById('company-filter');
+  const companies = [...new Set(allJobs.map(j => j.company))].sort();
+  companies.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+}
+
+function onFilter() {
+  const v = parseFloat(document.getElementById('min-score').value);
+  document.getElementById('score-display').textContent = v > 0 ? v.toFixed(1) : 'All';
+  render();
+}
+
+function render() {
+  const minScore = parseFloat(document.getElementById('min-score').value);
+  const statusF  = document.getElementById('status-filter').value;
+  const companyF = document.getElementById('company-filter').value;
+
+  let jobs = allJobs.filter(j => {
+    if (minScore > 0 && (!j.score || j.score.total < minScore)) return false;
+    if (statusF && j.status !== statusF) return false;
+    if (companyF && j.company !== companyF) return false;
+    return true;
+  });
+
+  document.getElementById('total-badge').textContent = `${jobs.length} jobs`;
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+
+  if (!jobs.length) { grid.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  grid.innerHTML = jobs.map(cardHtml).join('');
+}
+
+function renderStats() {
+  document.getElementById('s-scored').textContent  = allJobs.filter(j => j.score).length;
+  document.getElementById('s-strong').textContent  = allJobs.filter(j => j.score?.total >= 4).length;
+  document.getElementById('s-applied').textContent = allJobs.filter(j => j.status === 'applied').length;
+}
+
+function scoreClass(score) {
+  if (!score) return 'score-none';
+  if (score.total >= 4) return 'score-high';
+  if (score.total >= 3) return 'score-mid';
+  return 'score-low';
+}
+
+function cardHtml(job) {
+  const sc = job.score;
+  const scoreDisp = sc ? sc.total.toFixed(1) : '–';
+  const dims = sc ? `
+    <div class="dims">
+      ${dim('PS', sc.productSense)}
+      ${dim('EX', sc.execution)}
+      ${dim('IN', sc.influence)}
+      ${dim('DI', sc.discovery)}
+      ${dim('MI', sc.metricsImpact)}
+    </div>` : '';
+
+  const matched = (sc?.matchedCompetencies ?? []).map(t => `<span class="tag tag-match">✓ ${t}</span>`).join('');
+  const gaps    = (sc?.gaps ?? []).map(t => `<span class="tag tag-gap">✗ ${t}</span>`).join('');
+  const tagsHtml = (matched || gaps) ? `<div class="competencies">${matched}${gaps}</div>` : '';
+  const reasonHtml = sc?.reasoning ? `<div class="reasoning">${sc.reasoning}</div>` : '';
+  const remote = job.remote ? '<span class="remote-badge">Remote</span>' : '';
+
+  const id = encodeURIComponent(job.id);
+  return `
+  <div class="card status-${job.status}" id="card-${CSS.escape(job.id)}">
+    <div class="card-top">
+      <div class="card-title"><a href="${job.url}" target="_blank" rel="noopener">${job.title}</a></div>
+      <div class="score-pill ${scoreClass(sc)}">${scoreDisp}</div>
+    </div>
+    <div class="meta">
+      <span>🏢 ${job.company}</span>
+      <span>📍 ${job.location || '—'}</span>
+      ${remote}
+      <span style="margin-left:auto;text-transform:uppercase;font-size:10px;letter-spacing:0.5px">${job.status}</span>
+    </div>
+    ${dims}
+    ${tagsHtml}
+    ${reasonHtml}
+    <div class="card-actions">
+      <button class="btn btn-apply" onclick="setStatus('${id}','applied')">✓ Mark applied</button>
+      <button class="btn btn-archive" onclick="setStatus('${id}','archived')">Archive</button>
+    </div>
+  </div>`;
+}
+
+function dim(label, val) {
+  const pct = val != null ? (val / 5) * 100 : 0;
+  const num = val != null ? val.toFixed(1) : '–';
+  return `<div class="dim">
+    <div class="dim-num">${num}</div>
+    <div class="dim-bar"><div class="dim-fill" style="width:${pct}%"></div></div>
+    <div class="dim-label">${label}</div>
+  </div>`;
+}
+
+async function setStatus(encodedId, status) {
+  const id = decodeURIComponent(encodedId);
+  await fetch(`/api/jobs/${encodedId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  const job = allJobs.find(j => j.id === id);
+  if (job) job.status = status;
+  renderStats();
+  render();
+  toast(status === 'applied' ? '✓ Marked as applied' : 'Archived');
+}
+
+async function runScan() {
+  const btn  = document.getElementById('scan-btn');
+  const icon = document.getElementById('scan-icon');
+  btn.disabled = true;
+  icon.className = 'scanning';
+  toast('Scanning Greenhouse boards…');
+  try {
+    const res  = await fetch('/api/scan', { method: 'POST' });
+    const data = await res.json();
+    await load();
+    toast('Scan complete — tracker updated');
+  } catch(e) {
+    toast('Scan failed: ' + e.message);
+  }
+  btn.disabled = false;
+  icon.className = '';
+  icon.textContent = '↻';
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+load();
+</script>
+</body>
+</html>

@@ -25,17 +25,41 @@ const PM_KEYWORDS = [
   'product owner',
 ];
 
-// Companies to scan on Greenhouse (add your own)
+// Companies confirmed on Greenhouse public boards
 const GREENHOUSE_BOARDS = [
-  'notion',
   'figma',
-  'linear',
-  'vercel',
   'stripe',
   'anthropic',
   'airtable',
-  'retool',
-  'loom',
+  'asana',
+  'brex',
+  'canva',
+  'checkr',
+  'coinbase',
+  'confluent',
+  'datadog',
+  'dropbox',
+  'duolingo',
+  'hubspot',
+  'intercom',
+  'lattice',
+  'lyft',
+  'mixpanel',
+  'mongodb',
+  'miro',
+  'notion',       // may 404 — skipped gracefully
+  'openai',
+  'plaid',
+  'ramp',
+  'reddit',
+  'rippling',
+  'robinhood',
+  'segment',
+  'shopify',
+  'snowflake',
+  'square',
+  'twilio',
+  'zendesk',
 ];
 
 async function run() {

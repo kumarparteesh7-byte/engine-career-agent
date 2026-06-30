@@ -25,6 +25,8 @@ async function run() {
   const jobs = load().filter((j) => j.status === 'new');
   console.log(`Scoring ${jobs.length} new jobs…`);
 
+  const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
   for (const job of jobs) {
     process.stdout.write(`  ${job.company} — ${job.title}… `);
     try {
@@ -33,8 +35,15 @@ async function run() {
       const flag = score.total >= FILTER_THRESHOLD ? '✓' : '–';
       console.log(`${score.total.toFixed(1)} ${flag}`);
     } catch (e) {
-      console.log(`error: ${e.message}`);
+      const msg = e.message ?? '';
+      if (msg.includes('429') || msg.includes('rate')) {
+        console.log('rate limited — waiting 20s…');
+        await delay(20000);
+      } else {
+        console.log(`error: ${msg.slice(0, 80)}`);
+      }
     }
+    await delay(500); // stay within Groq free tier (30 req/min)
   }
   console.log(`\nFilter threshold: ${FILTER_THRESHOLD}. Roles ≥ ${FILTER_THRESHOLD} are ready to tailor.`);
 }
