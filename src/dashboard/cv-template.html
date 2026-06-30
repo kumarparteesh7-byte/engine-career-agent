@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CV</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+/* ── ROOT KNOB ──
+   Everything inside .page is sized in `em` relative to this font-size.
+   The fit() routine shrinks ONLY this value to make content fit one A4
+   page. Width stays a fixed 210mm so the layout never goes off-centre. */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto;
+  padding: 11mm 15mm;
+  background: #fff;
+  font-size: 9.7px;          /* ← auto-tuned by fit() */
+  line-height: 1.4;
+}
+
+/* ── HEADER ── */
+.name {
+  font-size: 2.95em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f0f0f;
+  line-height: 1;
+}
+.headline-row { display: flex; align-items: center; gap: 1em; margin-top: 0.4em; }
+.headline { font-size: 1.08em; font-weight: 600; color: #4f46e5; }
+.headline-sep { color: #d1d5db; }
+.subhead { font-size: 0.95em; color: #6b7280; }
+.contact-row {
+  display: flex; align-items: center; gap: 1.9em;
+  margin-top: 0.35em; font-size: 0.95em; color: #4b5563;
+}
+.contact-row a { color: #4b5563; text-decoration: none; }
+
+.rule      { border: none; border-top: 0.2em solid #e5e7eb; margin: 0.7em 0 0.85em; }
+.rule-blue { border: none; border-top: 0.16em solid #4f46e5; margin: 0.7em 0 0.85em; }
+
+/* ── METRICS BAR ── */
+.metrics {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  border: 0.16em solid #e5e7eb; border-radius: 0.6em;
+  overflow: hidden; margin-bottom: 1em;
+}
+.metric { padding: 0.65em 1em; text-align: center; border-right: 0.1em solid #e5e7eb; }
+.metric:last-child { border-right: none; }
+.metric-val { display: block; font-size: 1.5em; font-weight: 800; color: #4f46e5; line-height: 1.1; }
+.metric-label { display: block; font-size: 0.78em; color: #9ca3af; margin-top: 0.2em; font-weight: 500; }
+
+/* ── TAILORED NOTE ── */
+.tailored-note {
+  background: #f5f3ff; border-left: 0.32em solid #4f46e5;
+  border-radius: 0 0.4em 0.4em 0; padding: 0.5em 1.1em;
+  font-size: 0.9em; color: #4f46e5; margin-bottom: 1em;
+}
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-size: 0.82em; font-weight: 700; letter-spacing: 0.22em;
+  text-transform: uppercase; color: #4f46e5;
+  margin-bottom: 0.75em; padding-bottom: 0.35em; border-bottom: 0.1em solid #e5e7eb;
+}
+
+/* ── ROLE ── */
+.role { margin-bottom: 0.95em; }
+.role-header { display: flex; justify-content: space-between; align-items: baseline; }
+.role-title { font-size: 1.2em; font-weight: 700; color: #111; }
+.role-dates { font-size: 0.92em; color: #6b7280; font-weight: 500; }
+.role-meta { font-size: 0.92em; color: #6b7280; font-style: italic; margin-top: 0.1em; margin-bottom: 0.5em; }
+.bullets { list-style: none; display: flex; flex-direction: column; gap: 0.32em; }
+.bullets li { display: flex; gap: 0.7em; font-size: 1em; color: #2d2d2d; line-height: 1.42; }
+.bullets li::before { content: '→'; color: #4f46e5; font-weight: 700; flex-shrink: 0; }
+
+/* ── EDUCATION ── */
+.edu-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25em; }
+.edu-degree { font-size: 1.05em; font-weight: 700; }
+.edu-year { font-size: 0.9em; color: #6b7280; }
+.edu-school { font-size: 0.9em; color: #6b7280; font-style: italic; margin-bottom: 0.55em; }
+
+/* ── SKILLS ── */
+.skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35em 3em; }
+.skill { font-size: 1em; color: #374151; display: flex; align-items: center; gap: 0.7em; }
+.skill::before { content: '·'; color: #4f46e5; font-weight: 800; font-size: 1.4em; line-height: 1; }
+
+/* ── PRINT ── */
+@page { size: A4; margin: 0; }
+@media print {
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+  <div class="name" id="cv-name"></div>
+  <div class="headline-row">
+    <span class="headline" id="cv-headline"></span>
+    <span class="headline-sep" id="cv-sep">·</span>
+    <span class="subhead" id="cv-subhead"></span>
+  </div>
+  <div class="contact-row" id="cv-contact"></div>
+  <hr class="rule-blue">
+  <div class="metrics" id="cv-metrics"></div>
+  <div id="cv-tailored-note"></div>
+  <div class="section-title">E X P E R I E N C E</div>
+  <div id="cv-experience"></div>
+  <hr class="rule">
+  <div class="section-title">E D U C A T I O N</div>
+  <div id="cv-education"></div>
+  <hr class="rule">
+  <div class="section-title">C O R E &nbsp; S K I L L S</div>
+  <div class="skills-grid" id="cv-skills"></div>
+</div>
+
+<script>
+const d = window.__CV_DATA__;
+if (!d) { document.body.innerHTML = '<p style="padding:40px;color:red">No CV data</p>'; }
+else { render(d); }
+
+function render(d) {
+  document.title = 'CV — ' + d.name + (d.tailoredFor ? ' — ' + d.tailoredFor.company : '');
+  document.getElementById('cv-name').textContent = d.name;
+  document.getElementById('cv-headline').textContent = d.headline;
+  document.getElementById('cv-subhead').textContent = d.location || '';
+  if (!d.location) document.getElementById('cv-sep').style.display = 'none';
+
+  document.getElementById('cv-contact').innerHTML = (d.contact||[]).map(c =>
+    c.url ? `<a href="${c.url}">${c.label}</a>` : `<span>${c.label}</span>`
+  ).join('');
+
+  document.getElementById('cv-metrics').innerHTML = (d.metrics||[]).map(m => `
+    <div class="metric">
+      <span class="metric-val">${m.value}</span>
+      <span class="metric-label">${m.label}</span>
+    </div>`).join('');
+
+  if (d.tailoredFor) {
+    document.getElementById('cv-tailored-note').innerHTML =
+      `<div class="tailored-note">Tailored for: <strong>${d.tailoredFor.title}</strong> at <strong>${d.tailoredFor.company}</strong></div>`;
+  }
+
+  document.getElementById('cv-experience').innerHTML = (d.sections||[]).map(s => `
+    <div class="role">
+      <div class="role-header">
+        <span class="role-title">${s.title}</span>
+        <span class="role-dates">${s.dates||''}</span>
+      </div>
+      <div class="role-meta">${s.company}${s.location ? ' · ' + s.location : ''}</div>
+      <ul class="bullets">${(s.bullets||[]).map(b=>`<li>${b}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  document.getElementById('cv-education').innerHTML = (d.education||[]).map(e => `
+    <div class="edu-row">
+      <span class="edu-degree">${e.degree}</span>
+      <span class="edu-year">${e.year}</span>
+    </div>
+    <div class="edu-school">${e.school}</div>`).join('');
+
+  document.getElementById('cv-skills').innerHTML = (d.skills||[]).map(s =>
+    `<div class="skill">${s}</div>`).join('');
+
+  // Wait for webfonts so measurement is accurate, then auto-fit.
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  else fit();
+}
+
+/* ── AUTO-FIT ──
+   A4 printable height ≈ 1123px at 96dpi. Shrink the root font-size of
+   .page until its content fits one page (with a small safety margin),
+   down to a readability floor. Width stays fixed, so it never goes
+   off-centre — only the type/spacing density changes. */
+function fit() {
+  const page = document.getElementById('page');
+  const A4_PX = 1123;
+  const TARGET = A4_PX - 6;       // safety margin to avoid sub-pixel spill
+  const FLOOR = 7.4;              // smallest readable base px
+  let base = 9.7;
+
+  page.style.minHeight = 'auto';  // measure true content height
+  for (let i = 0; i < 60; i++) {
+    page.style.fontSize = base + 'px';
+    if (page.scrollHeight <= TARGET || base <= FLOOR) break;
+    base -= 0.15;
+  }
+  // If there's spare room and we're at default, gently grow to fill the page
+  // (keeps short CVs from looking sparse) — capped so it never overflows.
+  if (base >= 9.7) {
+    while (base < 11.5) {
+      page.style.fontSize = (base + 0.15) + 'px';
+      if (page.scrollHeight > TARGET) { page.style.fontSize = base + 'px'; break; }
+      base += 0.15;
+    }
+  }
+  page.style.minHeight = '297mm';
+  document.body.dataset.fitted = '1';
+}
+</script>
+</body>
+</html>
