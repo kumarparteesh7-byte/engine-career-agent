@@ -1,0 +1,18 @@
+# Render blueprint — deploy with: New + → Blueprint → pick this repo.
+# Secret values (marked sync:false) are entered in the Render dashboard,
+# never committed here.
+services:
+  - type: web
+    name: byte-engine
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /healthz
+    envVars:
+      - key: ANTHROPIC_API_KEY   # your Anthropic key (scoring + tailoring)
+        sync: false
+      - key: APP_PASSWORD        # password to open the dashboard
+        sync: false
+      - key: CV_TEXT             # your CV (pipe-separated, see data/cv.txt)
+        sync: false
