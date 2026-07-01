@@ -1,20 +1,28 @@
 const https = require('https');
-const { buildRubricPrompt } = require('./pm-rubric');
+const { buildRubricPrompt } = require('./rubric');
+const { getDomain, DEFAULT_DOMAIN } = require('../domains');
 
 /**
  * Score a single job against a CV string using Claude Haiku.
- * Requires ANTHROPIC_API_KEY in environment.
+ * @param {object} job
+ * @param {string} cvText
+ * @param {string} [domainId] - domain id from src/domains.js (defaults to 'pm')
  */
-async function scoreJob(job, cvText) {
+async function scoreJob(job, cvText, domainId = DEFAULT_DOMAIN) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set in environment');
+
+  const domain = getDomain(domainId);
 
   const body = JSON.stringify({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
-    system: buildRubricPrompt(),
+    system: buildRubricPrompt(domain),
     messages: [
-      { role: 'user', content: `## Candidate CV\n\n${cvText}\n\n## Job Description\n\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location}\n\n${job.description}` },
+      {
+        role: 'user',
+        content: `## Candidate CV\n\n${cvText}\n\n## Job Description\n\nTitle: ${job.title}\nCompany: ${job.company}\nLocation: ${job.location}\n\n${job.description}`,
+      },
     ],
   });
 
@@ -43,7 +51,14 @@ async function scoreJob(job, cvText) {
           const parsed = JSON.parse(data);
           const text = parsed.content?.[0]?.text ?? '';
           const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-          resolve(JSON.parse(clean));
+          const score = JSON.parse(clean);
+          // Normalise: ensure dimensions map exists (handles old flat-key responses)
+          if (!score.dimensions) {
+            const { total, matchedCompetencies, gaps, reasoning, ...rest } = score;
+            score.dimensions = rest;
+          }
+          score.domainId = domain.id;
+          resolve(score);
         } catch (e) {
           reject(new Error(`Failed to parse score JSON: ${e.message}\nRaw: ${data}`));
         }

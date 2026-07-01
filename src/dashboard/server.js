@@ -4,8 +4,28 @@ const path  = require('path');
 const https = require('https');
 const { load, updateJob } = require('../tracker/tracker');
 const CV = require('../lib/cv');
+const { scoreJob } = require('../scorer/score');
+const { getDomain, DOMAINS, domainList } = require('../domains');
 
 const PORT        = process.env.PORT || 3000;
+
+const MODELS = [
+  { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku',   provider: 'anthropic', note: 'fast' },
+  { id: 'claude-sonnet-4-6',         label: 'Claude Sonnet',  provider: 'anthropic', note: 'smart' },
+  { id: 'claude-opus-4-8',           label: 'Claude Opus',    provider: 'anthropic', note: 'best' },
+  { id: 'llama-3.3-70b-versatile',   label: 'Llama 3.3 70B', provider: 'groq',      note: 'Groq' },
+  { id: 'llama-3.1-8b-instant',      label: 'Llama 3.1 8B',  provider: 'groq',      note: 'Groq fast' },
+  { id: 'moonshotai/kimi-k2-instruct', label: 'Kimi K2',     provider: 'groq',      note: 'Groq' },
+];
+
+function availableModels() {
+  const hasAnthropic = !!process.env.ANTHROPIC_API_KEY;
+  const hasGroq      = !!process.env.GROQ_API_KEY;
+  return MODELS.filter(m =>
+    (m.provider === 'anthropic' && hasAnthropic) ||
+    (m.provider === 'groq'      && hasGroq)
+  );
+}
 const HTML        = path.join(__dirname, 'index.html');
 const LIB_CV      = path.join(__dirname, '../lib/cv.js');
 const CONFIG_PATH = path.join(__dirname, '../../data/config.json');
@@ -99,6 +119,46 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  // Available models (filtered by which API keys are present)
+  if (url.pathname === '/api/models' && req.method === 'GET') {
+    return json(res, availableModels());
+  }
+
+  // Domain list (for UI selector + dimension labels)
+  if (url.pathname === '/api/domains' && req.method === 'GET') {
+    return json(res, DOMAINS);
+  }
+
+  // In-product scoring — scores all 'new' jobs against the CV + chosen domain
+  if (url.pathname === '/api/score' && req.method === 'POST') {
+    return readBody(req, async b => {
+      try {
+        const { domainId = 'pm' } = b ? JSON.parse(b) : {};
+        const domain = getDomain(domainId);
+        const cvText = fs.existsSync(CV_PATH) ? fs.readFileSync(CV_PATH, 'utf8') : '';
+        if (!cvText) { res.writeHead(400); return res.end('CV not loaded. Add your CV in Settings first.'); }
+        const jobs = load().filter(j => j.status === 'new');
+        if (!jobs.length) return json(res, { scored: 0, skipped: 0 });
+
+        let scored = 0, errors = 0;
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+        for (const job of jobs) {
+          try {
+            const score = await scoreJob(job, cvText, domainId);
+            updateJob(job.id, { score, status: 'scored' });
+            scored++;
+          } catch (e) {
+            const msg = e.message ?? '';
+            if (msg.includes('429') || msg.includes('rate')) await delay(20000);
+            else errors++;
+          }
+          await delay(400);
+        }
+        json(res, { scored, errors, total: jobs.length, domain: domain.label });
+      } catch (e) { res.writeHead(500); res.end(e.message); }
+    });
+  }
+
   // Trigger scan
   if (url.pathname === '/api/scan' && req.method === 'POST') {
     const { execFile } = require('child_process');
@@ -112,11 +172,11 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/chat' && req.method === 'POST') {
     return readBody(req, async b => {
       try {
-        const { jobId, message, history } = JSON.parse(b);
+        const { jobId, message, history, model } = JSON.parse(b);
         const job = load().find(j => j.id === jobId);
         if (!job) { res.writeHead(404); return res.end('Not found'); }
         const cvText = fs.existsSync(CV_PATH) ? fs.readFileSync(CV_PATH, 'utf8') : 'CV not loaded.';
-        const reply = await chat(job, message, history ?? [], cvText);
+        const reply = await chat(job, message, history ?? [], cvText, model);
         json(res, reply);
       } catch(e) { res.writeHead(500); res.end(e.message); }
     });
@@ -228,33 +288,80 @@ function rewriteTool(companies) {
 }
 
 function buildSystem(job, cvText, companies) {
-  return `You are a CV tailoring expert helping Parteesh Kumar optimise his CV for a specific role.
+  // If bullets have already been tailored in this session, show Claude the
+  // current state so it can iterate on its own changes rather than the original.
+  const tailored = job.tailoredBullets;
+  let cvSection = cvText;
+  if (tailored && Object.keys(tailored).length) {
+    const lines = Object.entries(tailored)
+      .map(([co, bs]) => `**${co}**\n${bs.map(b => `- ${b}`).join('\n')}`)
+      .join('\n\n');
+    cvSection += `\n\n---\n## Current tailored bullets (THESE are what the user sees now — iterate on these, not the originals above):\n${lines}`;
+  }
 
-## Parteesh's CV
-${cvText}
+  return `You are an elite CV coach helping the candidate land their target role. Your rewrites are sharp, impact-first, and mirror the language of the job description.
+
+## Candidate CV
+${cvSection}
 
 ## Target Job
 Title: ${job.title} | Company: ${job.company} | Location: ${job.location}
 ${job.description}
 
+## Bullet writing rules — follow these on every rewrite:
+1. **STAR-lite format**: each bullet = Action verb → what you did (situation/task implicit) → measurable result. One sentence, no fluff.
+   Good: "Redesigned onboarding flow for 3 enterprise accounts, cutting time-to-value from 90 to 45 days and lifting 6-month retention by 18%."
+   Bad: "Responsible for helping customers onboard to the platform."
+
+2. **Impact-first**: lead with the outcome when it's stronger than the action.
+   Good: "Grew ARR from $2M to $8M in 18 months by building and leading a 6-person outbound sales motion."
+
+3. **Mirror JD language**: lift keywords and phrases directly from the job description (e.g. if JD says "cross-functional stakeholder alignment", use that phrase).
+
+4. **Preserve real numbers**: never invent metrics. Keep every dollar, percentage, headcount, and timeline from the original. If no metric exists, use scale/scope instead ("across 40+ enterprise accounts", "within a 120-person org").
+
+5. **Tight**: max 20 words per bullet. Cut filler ("successfully", "leveraged", "utilised", "assisted with", "helped to").
+
+6. **Strong verbs only**: Led, Built, Drove, Closed, Launched, Reduced, Grew, Negotiated, Shipped, Designed — not "Worked on", "Was involved in", "Supported".
+
 ## How to respond
-- When the user wants bullets rewritten/tailored/improved, CALL the apply_cv_rewrites tool. Do NOT paste the rewritten bullets as plain text in your reply — the tool is what updates the CV the user downloads.
-- Key each role by its exact company name. Valid companies: ${companies.map(c => `"${c}"`).join(', ')}.
-- Rewrite to match the JD's language and keywords, but NEVER invent experience or metrics.
-- Keep bullets tight and results-led. Preserve real numbers ($12M, 150+, 80%, etc.).
-- For questions (gaps, best matches, advice), just answer in chat — only call the tool when actually changing bullets.`;
+- When the user wants bullets rewritten/tailored/improved, CALL the apply_cv_rewrites tool. Do NOT paste bullets as plain text — the tool updates the live CV panel.
+- If tailored bullets exist above, iterate on THOSE, not the originals.
+- Key each role by exact company name. Valid companies: ${companies.map(c => `"${c}"`).join(', ')}.
+- For questions (gaps, advice, strategy), just answer in chat — only call the tool when actually changing bullets.`;
 }
 
-async function chat(job, message, history, cvText) {
+function parseBulletsFromContent(replyText, bullets) {
+  if (!bullets) {
+    const m = replyText.match(/```bullets\s*([\s\S]*?)```/);
+    if (m) { try { bullets = JSON.parse(m[1]); replyText = replyText.replace(/```bullets[\s\S]*?```/g, '').trim(); } catch(_) {} }
+  }
+  return { replyText, bullets };
+}
+
+async function chat(job, message, history, cvText, modelId) {
+  const companies = CV.companies(CV.parseCv(cvText));
+  const systemPrompt = buildSystem(job, cvText, companies);
+  const tool = rewriteTool(companies);
+
+  // Resolve which model + provider to use
+  const modelDef = MODELS.find(m => m.id === modelId) || MODELS[0];
+
+  if (modelDef.provider === 'groq') {
+    return chatGroq(job, message, history, systemPrompt, tool, companies, modelDef.id);
+  }
+  return chatAnthropic(job, message, history, systemPrompt, tool, companies, modelDef.id);
+}
+
+function chatAnthropic(job, message, history, systemPrompt, tool, companies, modelId) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
 
-  const companies = CV.companies(CV.parseCv(cvText));
   const body = JSON.stringify({
-    model: 'claude-haiku-4-5-20251001',
+    model: modelId,
     max_tokens: 2048,
-    system: buildSystem(job, cvText, companies),
-    tools: [rewriteTool(companies)],
+    system: systemPrompt,
+    tools: [tool],
     messages: [...history, { role: 'user', content: message }],
   });
 
@@ -268,26 +375,85 @@ async function chat(job, message, history, cvText) {
       r.on('end', () => {
         if (r.statusCode !== 200) return reject(new Error(`Anthropic ${r.statusCode}: ${d}`));
         const data = JSON.parse(d);
-        let replyText = '';
-        let bullets = null;
-
+        let replyText = '', bullets = null;
         for (const block of data.content || []) {
           if (block.type === 'text') replyText += block.text;
           if (block.type === 'tool_use' && block.name === 'apply_cv_rewrites') {
             bullets = {};
-            (block.input.roles || []).forEach(role => {
-              if (role.company && Array.isArray(role.bullets)) bullets[role.company] = role.bullets;
+            (block.input.roles || []).forEach(r => {
+              if (r.company && Array.isArray(r.bullets)) bullets[r.company] = r.bullets;
             });
             if (block.input.summary) replyText += (replyText ? '\n\n' : '') + block.input.summary;
           }
         }
+        ({ replyText, bullets } = parseBulletsFromContent(replyText, bullets));
+        if (bullets && Object.keys(bullets).length) {
+          updateJob(job.id, { tailoredBullets: bullets, status: 'tailored' });
+          if (!replyText) replyText = 'Updated your CV bullets — see the panel on the right. ✏️';
+        }
+        resolve({ reply: replyText.trim(), bullets });
+      });
+    });
+    req.on('error', reject); req.write(body); req.end();
+  });
+}
 
-        // Fallback: legacy fenced ```bullets block, just in case.
-        if (!bullets) {
-          const m = replyText.match(/```bullets\s*([\s\S]*?)```/);
-          if (m) { try { bullets = JSON.parse(m[1]); replyText = replyText.replace(/```bullets[\s\S]*?```/g, '').trim(); } catch(_) {} }
+function chatGroq(job, message, history, systemPrompt, tool, companies, modelId) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('GROQ_API_KEY not set');
+
+  // Convert Anthropic tool schema → OpenAI function schema
+  const openAITool = {
+    type: 'function',
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.input_schema,
+    },
+  };
+
+  const body = JSON.stringify({
+    model: modelId,
+    max_tokens: 2048,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...history,
+      { role: 'user', content: message },
+    ],
+    tools: [openAITool],
+    tool_choice: 'auto',
+  });
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Length': Buffer.byteLength(body) },
+    }, r => {
+      let d = ''; r.on('data', c => d += c);
+      r.on('end', () => {
+        if (r.statusCode !== 200) return reject(new Error(`Groq ${r.statusCode}: ${d}`));
+        const data = JSON.parse(d);
+        const msg = data.choices?.[0]?.message;
+        let replyText = msg?.content || '', bullets = null;
+
+        if (msg?.tool_calls?.length) {
+          for (const tc of msg.tool_calls) {
+            if (tc.function?.name === 'apply_cv_rewrites') {
+              try {
+                const input = JSON.parse(tc.function.arguments);
+                bullets = {};
+                (input.roles || []).forEach(r => {
+                  if (r.company && Array.isArray(r.bullets)) bullets[r.company] = r.bullets;
+                });
+                if (input.summary) replyText += (replyText ? '\n\n' : '') + input.summary;
+              } catch(_) {}
+            }
+          }
         }
 
+        ({ replyText, bullets } = parseBulletsFromContent(replyText, bullets));
         if (bullets && Object.keys(bullets).length) {
           updateJob(job.id, { tailoredBullets: bullets, status: 'tailored' });
           if (!replyText) replyText = 'Updated your CV bullets — see the panel on the right. ✏️';
